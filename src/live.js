@@ -175,6 +175,47 @@ const createHalofluxLive = (opts) => {
     return clip(oneLine(text), TOOL_TEXT_MAX);
   }
 
+  const QUESTION_TOOLS = new Set(['ask_user_question', 'request_user_input']);
+
+  /** Normalise ask_user_question arguments into one renderable prompt. */
+  function parseQuestionPrompt(raw, callId) {
+    let args = raw;
+    if (typeof args === 'string') {
+      try { args = JSON.parse(args); } catch { return null; }
+    }
+    if (!args || typeof args !== 'object') return null;
+    const list = Array.isArray(args.questions) ? args.questions : [];
+    const questions = list.map((item, index) => {
+      if (!item || typeof item !== 'object') return null;
+      const options = (Array.isArray(item.options) ? item.options : []).map((option, optionIndex) => {
+        if (typeof option === 'string') return { label: option.trim(), description: '' };
+        if (!option || typeof option !== 'object') return null;
+        const label = typeof option.label === 'string' ? option.label.trim() : '';
+        if (!label) return null;
+        return {
+          label,
+          description: typeof option.description === 'string' ? option.description : '',
+        };
+      }).filter(Boolean);
+      const text = typeof item.question === 'string' ? item.question
+        : (typeof item.prompt === 'string' ? item.prompt : '');
+      if (!text.trim() && !options.length) return null;
+      return {
+        id: item.id === undefined || item.id === null ? 'question-' + String(index) : String(item.id),
+        header: typeof item.header === 'string' ? item.header : '',
+        question: text,
+        detail: typeof item.detail === 'string' ? item.detail : '',
+        multiSelect: item.multiSelect === true,
+        options,
+      };
+    }).filter(Boolean);
+    if (!questions.length) return null;
+    return {
+      callId: callId === undefined || callId === null ? '' : String(callId),
+      questions,
+    };
+  }
+
   /* ---------------- mutable state ---------------- */
 
   let desiredId;                  // session id the consumer asked for
@@ -232,6 +273,8 @@ const createHalofluxLive = (opts) => {
     contextLimit: 0,
     approvalPending: false,
     approvalRequest: null,
+    questionPending: false,
+    questionPrompt: null,
     todayKey: '',
     todayUsage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     sessionUsage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -242,6 +285,8 @@ const createHalofluxLive = (opts) => {
     cacheWriteTokens: 0,
     uncachedInputTokens: 0,
     cacheHit: 0,
+    cacheHitNative: 0,
+    hasCacheHitNative: false,
     reasoning: '',
     reasoningAt: 0,
     series: [],
@@ -354,6 +399,14 @@ const createHalofluxLive = (opts) => {
      line shows the full arrival waveform. The 2 s average is kept alongside as
      `avg` for the trend line. Sampling is skipped while nothing is happening;
      an idle tab therefore does not grow the buffer. */
+  /** Whole-session cache hit, the same denominator DSH's stats pill uses. */
+  function sessionCacheHit() {
+    const read = live.sessionUsage.cacheRead || 0;
+    const write = live.sessionUsage.cacheWrite || 0;
+    const denom = (live.sessionUsage.input || 0) + read + write;
+    return denom > 0 ? Math.min(1, read / denom) : live.cacheHit;
+  }
+
   function sampleSeries() {
     const at = now();
     const dt = at - lastSampleAt;
@@ -384,7 +437,7 @@ const createHalofluxLive = (opts) => {
       t: at,
       tps: inst,
       avg: Math.round(live.tps * 10) / 10,
-      cache: Math.round(live.cacheHit * 1000) / 1000,
+      cache: live.hasCacheHitNative ? live.cacheHitNative : sessionCacheHit(),
       out: displayTokens,
       ctx: live.contextTokens,
     });
@@ -449,9 +502,9 @@ const createHalofluxLive = (opts) => {
   function recomputeCacheHit() {
     const read = live.cacheReadTokens || 0;
     const write = live.cacheWriteTokens || 0;
-    // inputTokens is the prompt total when provided by the event; keep the
-    // uncached share non-negative so a cache-only request still reports 100%.
-    const uncached = Math.max(0, (live.inputTokens || 0) - read - write);
+    // DSH reports inputTokens as the *uncached* prompt bucket, not the prompt
+    // total. Cache hit is cacheRead / (uncached + cacheRead + cacheWrite).
+    const uncached = live.uncachedInputTokens || 0;
     const prompt = uncached + read + write;
     live.cacheHit = prompt > 0 ? Math.min(1, read / prompt) : 0;
   }
@@ -464,20 +517,28 @@ const createHalofluxLive = (opts) => {
     const cacheRead = num(usage.cacheReadTokens);
     const cacheWrite = num(usage.cacheWriteTokens);
 
-    if (input !== undefined) live.inputTokens = input;
-    else if (total !== undefined && output !== undefined) live.inputTokens = Math.max(0, total - output);
-    else if (cacheRead !== undefined || cacheWrite !== undefined) live.inputTokens = (cacheRead || 0) + (cacheWrite || 0);
+    if (cacheRead !== undefined) live.cacheReadTokens = cacheRead;
+    else if (input !== undefined) live.cacheReadTokens = 0;
+    if (cacheWrite !== undefined) live.cacheWriteTokens = cacheWrite;
+    else if (input !== undefined) live.cacheWriteTokens = 0;
+
+    let uncached;
+    if (input !== undefined) uncached = Math.max(0, input);
+    else if (total !== undefined && output !== undefined) {
+      uncached = Math.max(0, total - output - (live.cacheReadTokens || 0) - (live.cacheWriteTokens || 0));
+    } else if (cacheRead !== undefined || cacheWrite !== undefined) uncached = 0;
+    if (uncached !== undefined) live.uncachedInputTokens = uncached;
+
+    live.inputTokens = (live.uncachedInputTokens || 0) + (live.cacheReadTokens || 0) + (live.cacheWriteTokens || 0);
 
     if (output !== undefined) { live.outputTokens = output; usageAuthoritative = true; }
     else if (total !== undefined) { live.outputTokens = total; usageAuthoritative = true; }
 
-    if (cacheRead !== undefined) live.cacheReadTokens = cacheRead;
-    if (cacheWrite !== undefined) live.cacheWriteTokens = cacheWrite;
     recomputeCacheHit();
 
     // prompt size of the newest request ~= context occupancy
     if (total !== undefined && output !== undefined) live.contextTokens = Math.max(0, total - output);
-    else if (input !== undefined) live.contextTokens = input;
+    else if (live.inputTokens > 0) live.contextTokens = live.inputTokens;
 
     notifySoon();
   }
@@ -544,12 +605,15 @@ const createHalofluxLive = (opts) => {
     live.prunes = 0;
     live.approvalPending = false;
     live.approvalRequest = null;
+    live.questionPending = false;
+    live.questionPrompt = null;
     compactionIds = new Set();
     const entries = arr(snapshot && snapshot.entries);
     const turnTotals = new Map();
     let turn = 0;
     let approval = false;
     let approvalRequest = null;
+    let pendingQuestion = null;
     for (let i = 0; i < entries.length; i += 1) {
       if (isTransientEntry(entries[i])) continue;
       const event = (entries[i] && entries[i].event) || entries[i];
@@ -558,6 +622,8 @@ const createHalofluxLive = (opts) => {
       const eventTurn = num(data.turn);
       if (event.type === 'turn/start') {
         if (eventTurn !== undefined) turn = eventTurn;
+      } else if (event.type === 'turn/end') {
+        pendingQuestion = null;
       } else if (event.type === 'approval/asked') {
         approval = true;
         approvalRequest = {
@@ -567,6 +633,18 @@ const createHalofluxLive = (opts) => {
       } else if (event.type === 'approval/decided') {
         approval = false;
         approvalRequest = null;
+      } else if (event.type === 'tool/call') {
+        const name = typeof data.name === 'string' ? data.name : '';
+        if (QUESTION_TOOLS.has(name)) {
+          const parsed = parseQuestionPrompt(data.arguments, data.callId);
+          if (parsed) pendingQuestion = parsed;
+        }
+      } else if (event.type === 'tool/result') {
+        const message = (data.message && typeof data.message === 'object') ? data.message : {};
+        const source = (message.source && typeof message.source === 'object') ? message.source : {};
+        const callId = message.toolCallId !== undefined ? message.toolCallId
+          : (source.callId !== undefined ? source.callId : data.callId);
+        if (pendingQuestion && String(pendingQuestion.callId) === String(callId)) pendingQuestion = null;
       } else if (event.type === 'assistant/message') {
         if (eventTurn !== undefined) turn = eventTurn;
         addUsageTotals(live.sessionUsage, data.usage);
@@ -590,6 +668,8 @@ const createHalofluxLive = (opts) => {
     live.turnUsage = turnTotals.get(turn) || emptyUsage();
     live.approvalPending = approval;
     live.approvalRequest = approvalRequest;
+    live.questionPending = !!pendingQuestion;
+    live.questionPrompt = pendingQuestion;
     if (turn > 0) live.turn = turn;
   }
 
@@ -674,6 +754,8 @@ const createHalofluxLive = (opts) => {
       case 'turn/end': {
         const turn = num(data.turn);
         if (turn !== undefined) live.turn = turn;
+        live.questionPrompt = null;
+        live.questionPending = false;
         if (!quiet) {
           const kind = reasonKind(data.reason);
           pushFeed(kind === 'error' ? 'error' : 'turn', 'turn ' + live.turn + ' ' + kind);
@@ -714,6 +796,13 @@ const createHalofluxLive = (opts) => {
         live.toolCalls += 1;
         if (at !== undefined) live.lastToolEventAt = at;
         upsertTool(data.callId, name, 'running', at);
+        if (QUESTION_TOOLS.has(name)) {
+          const parsed = parseQuestionPrompt(data.arguments, data.callId);
+          if (parsed) {
+            live.questionPrompt = parsed;
+            live.questionPending = true;
+          }
+        }
         if (!quiet) pushFeed('tool', name + '(' + summarizeArgs(data.arguments) + ')');
         break;
       }
@@ -730,6 +819,10 @@ const createHalofluxLive = (opts) => {
         live.toolResults += 1;
         if (at !== undefined) live.lastToolEventAt = at;
         upsertTool(callId, name, failed ? 'error' : 'ok', at);
+        if (live.questionPrompt && String(live.questionPrompt.callId) === String(callId)) {
+          live.questionPrompt = null;
+          live.questionPending = false;
+        }
         if (!quiet) {
           const detail = failed
             ? ((data.error && (data.error.code || data.error.name)) || 'error')
@@ -1020,6 +1113,21 @@ const createHalofluxLive = (opts) => {
         if (output !== undefined) { live.outputTokens = output; usageAuthoritative = true; }
       }
     }
+
+    /* DSH's own cache-hit pill reads the whole-log tokenUsage projection, not
+       the newest request. Mirror that projection so the dock legend and the
+       chart line report the same 99.6% the native UI shows. */
+    const nativeUsage = faceValue(projections, 'tokenUsage');
+    if (nativeUsage && typeof nativeUsage === 'object') {
+      const uncached = num(nativeUsage.uncachedInputTokens);
+      const read = num(nativeUsage.cacheReadTokens);
+      const write = num(nativeUsage.cacheWriteTokens);
+      const denominator = (uncached || 0) + (read || 0) + (write || 0);
+      if (denominator > 0) {
+        live.cacheHitNative = Math.min(1, Math.max(0, (read || 0) / denominator));
+        live.hasCacheHitNative = true;
+      }
+    }
   }
 
   /* ---------------- binding lifecycle ---------------- */
@@ -1034,6 +1142,8 @@ const createHalofluxLive = (opts) => {
     live.cacheWriteTokens = 0;
     live.uncachedInputTokens = 0;
     live.cacheHit = 0;
+    live.cacheHitNative = 0;
+    live.hasCacheHitNative = false;
     live.reasoning = '';
     live.reasoningAt = 0;
     live.series.length = 0;
@@ -1059,6 +1169,8 @@ const createHalofluxLive = (opts) => {
     live.prunes = 0;
     live.approvalPending = false;
     live.approvalRequest = null;
+    live.questionPending = false;
+    live.questionPrompt = null;
     compactionIds = new Set();
     usageScanSuppressed = false;
     live.sourceError = false;
@@ -1238,6 +1350,8 @@ const createHalofluxLive = (opts) => {
     live.prunes = 0;
     live.approvalPending = false;
     live.approvalRequest = null;
+    live.questionPending = false;
+    live.questionPrompt = null;
     compactionIds = new Set();
     usageScanSuppressed = false;
     live.sourceError = false;

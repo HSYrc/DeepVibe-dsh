@@ -1873,11 +1873,12 @@ const HalofluxEngine = (() => {
       /* While a Host approval prompt is open the model is waiting on the user.
          Ease motion and particle generation to a full stop, like the end of a
          task, but leave the level/brightness untouched: the frame stays lit. */
-      const slowTarget = live && live.approvalPending ? 0 : 1;
+      const waitingForUser = !!(live && (live.approvalPending || live.questionPending));
+      const slowTarget = waitingForUser ? 0 : 1;
       const slowTau = slowTarget < motionSlow ? 0.45 : 0.5;
       motionSlow += (slowTarget - motionSlow) * (1 - Math.exp(-dt / slowTau));
       if (Math.abs(motionSlow - slowTarget) < 0.001) motionSlow = slowTarget;
-      const actTarget = live && live.approvalPending ? 0 : 1;
+      const actTarget = waitingForUser ? 0 : 1;
       const actTau = actTarget < approvalAct ? 0.32 : 0.5;
       approvalAct += (actTarget - approvalAct) * (1 - Math.exp(-dt / actTau));
       if (Math.abs(approvalAct - actTarget) < 0.001) approvalAct = actTarget;

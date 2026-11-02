@@ -199,6 +199,12 @@ const HalofluxDock = (() => {
     return isFinite(n) && n > 0 ? Math.round(n * 100) + '%' : '—';
   }
 
+  /** Cache hit ratio is shown to one decimal; 0% is a real reading, not no data. */
+  function pct1(v) {
+    const n = Number(v);
+    return isFinite(n) ? (n * 100).toFixed(1) + '%' : '—';
+  }
+
   function kindLabel(kind) {
     if (kind === 'tool') return 'tool';
     if (kind === 'error') return 'error';
@@ -654,7 +660,7 @@ const HalofluxDock = (() => {
       h('div', { className: 'hfx-legend' },
         h('span', { className: 'tps' }, 'NOW ', h('b', null, Math.round(last.tps || 0))),
         h('span', { className: 'avg' }, 'AVG ', h('b', null, Math.round(last.avg || 0))),
-        h('span', { className: 'cache' }, 'CACHE ', h('b', null, pct(last.cache))),
+        h('span', { className: 'cache' }, 'CACHE ', h('b', null, pct1(last.cache))),
         h('span', null, 'PEAK ', h('b', null, Math.round(maxTps)))
       )
     );
@@ -734,12 +740,17 @@ const HalofluxDock = (() => {
     const ctxLeft = ctxMax > 0 ? Math.max(0, ctxMax - ctxUsed) : undefined;
     const compactions = Number(live && live.compactions) || 0;
     const prunes = Number(live && live.prunes) || 0;
-    const price = modelPrice(live && live.model);
     const platformToday = platform ? Number(platform.todayCost) : NaN;
-    const todayCost = Number.isFinite(platformToday)
-      ? platformToday
-      : (price ? usageCost(live && live.todayUsage, price) : undefined);
+    const todayCost = Number.isFinite(platformToday) ? platformToday : undefined;
     const balance = platformBalanceSummary(platform) || balanceSummary(billing);
+    const cacheRatio = (() => {
+      if (!live) return undefined;
+      if (live.hasCacheHitNative) return live.cacheHitNative;
+      const usage = live.sessionUsage;
+      const denom = usage ? (Number(usage.input) || 0) + (Number(usage.cacheRead) || 0) + (Number(usage.cacheWrite) || 0) : 0;
+      if (denom > 0) return (Number(usage.cacheRead) || 0) / denom;
+      return live.cacheHit;
+    })();
     const reasoning = (live && live.reasoning) || '';
     const streamTail = reasoning || (live && live.recentText ? String(live.recentText).slice(-320) : '');
 
@@ -754,7 +765,7 @@ const HalofluxDock = (() => {
           h('span', { className: 'k' }, 'STEP'), h('span', { className: 'v' }, (live && live.step) || 0),
           h('span', { className: 'k' }, 'TURN'), h('span', { className: 'v' }, (live && live.turn) || 0),
           h('span', { className: 'k' }, 'TOK/S'), h('span', { className: 'v' }, Math.round((live && live.tps) || 0)),
-          h('span', { className: 'k' }, 'CACHE'), h('span', { className: 'v' }, pct(live && live.cacheHit)),
+          h('span', { className: 'k' }, 'CACHE'), h('span', { className: 'v' }, pct1(cacheRatio)),
           h('span', { className: 'grow' }),
           h('button', { className: 'hfx-exit', onClick: onExit, title: 'Esc' }, 'EXIT · ESC')
         ),
@@ -777,7 +788,7 @@ const HalofluxDock = (() => {
             h('h4', null, h('span', { className: 'dot' }), 'TOKENS / CACHE'),
             h('div', { className: 'hfx-big' },
               h('div', { className: 'm' }, h('span', { className: 'l' }, 'OUT'), h('span', { className: 'n' }, fmt(live && live.outputTokens))),
-              h('div', { className: 'm' }, h('span', { className: 'l' }, 'CACHE HIT'), h('span', { className: 'n pink' }, pct(live && live.cacheHit))),
+              h('div', { className: 'm' }, h('span', { className: 'l' }, 'CACHE HIT'), h('span', { className: 'n pink' }, pct1(cacheRatio))),
               h('div', { className: 'm' }, h('span', { className: 'l' }, 'INST TOK/S'), h('span', { className: 'n teal' }, Math.round((live && live.instTps) || 0)))
             ),
             h(Chart, { live })

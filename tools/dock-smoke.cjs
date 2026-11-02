@@ -76,7 +76,7 @@ try { tree = D.Dock({ live, onExit() {} }); } catch (e) { threw = e; }
 ok(!threw, 'running live renders without throwing' + (threw ? ': ' + threw.message : ''));
 const text = JSON.stringify(tree);
 ok(text.includes('RUNNING') && text.includes('deepseek-chat'), 'header shows RUNNING + model');
-ok(text.includes('62%') && text.includes('41'), 'header shows cache hit and tok/s');
+ok(text.includes('62.0%') && text.includes('41'), 'header shows cache hit and tok/s');
 ok(text.includes('REASONING'), 'thinking panel shows streamed reasoning');
 
 const chart = find(tree, (n) => typeof n.type === 'function' && n.type.name === 'Chart');
@@ -140,8 +140,8 @@ ok(ctxText.includes('LEFT') && ctxText.includes('156.0k'), 'context card shows r
 ok(ctxText.includes('COMPACT') && ctxText.includes('PRUNE'), 'context card shows compaction + prune counters');
 ok(ctxText.includes('¥12.34'), 'context card shows the real account balance amount');
 ok(ctxText.includes('COST') && ctxText.includes('CNY'), 'cost section has a same-level COST heading with CNY currency');
-ok(ctxText.includes('BALANCE') && ctxText.includes('TODAY') && ctxText.includes('¥4.00'),
-  'cost section shows balance + today actual usage');
+ok(ctxText.includes('BALANCE') && ctxText.includes('TODAY') && ctxText.includes('—'),
+  'cost section leaves today unavailable without platform data');
 const noAccount = D.Dock({ live: ctxLive, billing: { unavailable: true, note: 'NO ACCOUNT' }, onExit() {} });
 const noAccountText = JSON.stringify(noAccount);
 ok(noAccountText.includes('BALANCE'), 'unavailable balance keeps the balance slot as —');

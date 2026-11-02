@@ -19,8 +19,10 @@
 | 设置页面 | **设置 → DeepVibe-dsh**：档位、预设、导入导出、全部 82 个参数 |
 | 沉浸看板 | 运行时升起四块真实数据卡（模型、上下文、实现热力图、余额/今日消费） |
 | 沉浸审批 | 右侧审批卡直接「拒绝 / 允许一次」，等待审批时运动静止、亮度保持 |
+| 沉浸提问 | 问题、选项、多选、补充输入、拒绝/提交；提交驱动原生 waterfall |
+| 缓存命中 | 使用 DSH `tokenUsage` 投影，整个会话口径，一位小数 |
 | 会话主题 | 沉浸右上角显示「项目名 · 会话主题」，白框发光 |
-| 平台账单 | Host 用 DSH 账户凭据读取 Platform 真实余额与今日实际消费，无 Chrome 依赖 |
+| 平台账单 | Host 用 DSH 账户凭据读取 Platform 真实余额与今日实际消费；30 秒轮询，无 Chrome 依赖；平台不可用时 TODAY 显示 —，不用估算冒充 |
 | HUD | `H` 键：KPI 条、事件流、工具调度、运镜按钮（默认关闭） |
 | 三段状态机 | 运行态 / 静默态 / 无会话 各有目标强度，起势与收势独立时长、可调曲线 |
 | 切会话转一圈 | 圆盘平滑转满 360°，外圈光束按层视差跟随 |
@@ -37,7 +39,7 @@ plugin_manager install_bundle  target=<本包目录的绝对路径>
 也可以分发打好的 tgz。`install_bundle` 需要**解压后的包目录**：
 
 ```text
-tar -xzf DeepVibe-dsh-0.5.12.tgz
+tar -xzf DeepVibe-dsh-0.5.18.tgz
 plugin_manager install_bundle  target=<解压出的 package 目录绝对路径>
 ```
 

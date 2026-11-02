@@ -7,7 +7,7 @@
  * token never leaves the Host.
  */
 const ROUTE = '/haloflux/platform-summary'
-const CACHE_MS = 3000
+const CACHE_MS = 30000
 let cache = null
 
 function sumCost(cost, currency) {
@@ -66,13 +66,30 @@ async function readPlatform(account) {
   const end = start + 86400
   let summary = null
   let usedAuth = ''
-  for (const authName of ['x-dsh-auth-token', 'bearer', 'raw']) {
-    const headers = headersFor(session, authName)
-    const out = await getJson(session.origin + '/api/v0/users/get_user_summary', headers)
-    if (out.status === 200 && out.json && out.json.code === 0 && out.json.data && out.json.data.biz_data) {
-      summary = out.json.data.biz_data
-      usedAuth = authName
-      break
+  /* The account provider already owns the Platform request policy. Prefer it
+     for the wallet, so a WAF/202 response on raw API calls cannot blank the
+     balance. */
+  try {
+    const out = await account.getBalance({
+      version: '0.2.1-rc.5',
+      locale: 'zh_CN',
+      timezoneOffsetSeconds: tz,
+    })
+    if (out && out.ok === true && out.value && out.value.status === 'ready') {
+      const wallets = Array.isArray(out.value.value) ? out.value.value : []
+      const bonusWallets = Array.isArray(out.value.bonusWallets) ? out.value.bonusWallets : []
+      summary = { normal_wallets: wallets, bonus_wallets: bonusWallets }
+    }
+  } catch { /* fall through to the raw summary */ }
+  if (!summary) {
+    for (const authName of ['x-dsh-auth-token', 'bearer', 'raw']) {
+      const headers = headersFor(session, authName)
+      const out = await getJson(session.origin + '/api/v0/users/get_user_summary', headers)
+      if (out.status === 200 && out.json && out.json.code === 0 && out.json.data && out.json.data.biz_data) {
+        summary = out.json.data.biz_data
+        usedAuth = authName
+        break
+      }
     }
   }
   if (!summary) return { ok: false, error: 'balance request failed' }

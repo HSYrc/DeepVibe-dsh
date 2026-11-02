@@ -149,6 +149,26 @@ const HalofluxPlugin = (() => {
 .hfx-approval .reject:hover:not(:disabled){border-color:#cfd2d8;color:#fff}
 .hfx-approval .allow{border:1px solid rgba(240,166,198,.85);background:rgba(240,166,198,.18);color:#fff}
 .hfx-approval .allow:hover:not(:disabled){background:rgba(240,166,198,.32)}
+.hfx-question{border-color:rgba(143,216,198,.7);box-shadow:0 0 48px rgba(143,216,198,.13),inset 0 0 30px rgba(0,0,0,.55);
+  max-height:min(86vh,760px);display:flex;flex-direction:column;transform:translateY(calc(-50% - 6em))}
+.hfx-question .kicker{color:#8fd8c6}
+.hfx-question .q-list{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:14px;padding-right:3px}
+.hfx-question .q-block{border-top:1px solid rgba(143,216,198,.16);padding-top:10px}
+.hfx-question .q-block:first-child{border-top:0;padding-top:0}
+.hfx-question .q-header{font-size:8px;letter-spacing:.18em;color:#8fd8c6;margin-bottom:4px}
+.hfx-question h3{font-size:16px;line-height:1.45;margin:0 0 8px}
+.hfx-question .q-detail{max-height:100px;overflow:auto;margin-bottom:8px;color:#b9bec8;font-size:10px;white-space:pre-wrap}
+.hfx-question .q-options{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.hfx-question .q-option{padding:9px 11px;text-align:left;border:1px solid rgba(120,128,142,.5);border-radius:8px;
+  background:rgba(14,16,20,.72);color:#dfe2e8;font-size:11px;letter-spacing:.02em;line-height:1.45}
+.hfx-question .q-option:hover:not(:disabled){border-color:rgba(143,216,198,.65)}
+.hfx-question .q-option.on{border-color:rgba(143,216,198,.9);background:rgba(143,216,198,.13);color:#effffb}
+.hfx-question .q-custom{width:100%;box-sizing:border-box;resize:vertical;min-height:54px;padding:9px 11px;
+  border:1px solid rgba(120,128,142,.45);border-radius:8px;background:rgba(8,10,12,.9);color:#e6ebf3;
+  font:11px/1.55 "JetBrains Mono",Consolas,ui-monospace,monospace;outline:none}
+.hfx-question .q-custom:focus{border-color:rgba(143,216,198,.75)}
+.hfx-question .allow{border-color:rgba(143,216,198,.85);background:rgba(143,216,198,.15)}
+.hfx-question .allow:hover:not(:disabled){background:rgba(143,216,198,.28)}
 @media (max-width:900px){.hfx-approval{right:16px;left:16px;width:auto}}
 `;
 
@@ -243,6 +263,92 @@ const HalofluxPlugin = (() => {
     } catch { return false; }
   }
 
+  const questionSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function cleanQuestionLabel(label) {
+    return String(label || '')
+      .replace(/\s*\((?:recommended|推荐)\)\s*$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function nativeQuestionRoot() {
+    const roots = Array.from(document.querySelectorAll('[data-question-key]'))
+      .filter((el) => el && el.getClientRects && el.getClientRects().length > 0);
+    return roots.length ? roots[roots.length - 1] : document.querySelector('[data-question-key]');
+  }
+
+  function nativeQuestionButton(root, pattern) {
+    return Array.from(root.querySelectorAll('button'))
+      .find((button) => !button.disabled && pattern.test(String(button.textContent || '').trim()));
+  }
+
+  async function waitNativeQuestionButton(pattern) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const root = nativeQuestionRoot();
+      const button = root ? nativeQuestionButton(root, pattern) : null;
+      if (button) return button;
+      await questionSleep(30);
+    }
+    return null;
+  }
+
+  /**
+   * Drive the native ask_user_question card. The immersive card only mirrors the
+   * request; the Host's live waterfall still lives in the composer behind the
+   * veil, so answering there keeps one decision path and one transcript.
+   */
+  async function answerNativeQuestion(prompt, answers, skipAll) {
+    try {
+      for (let i = 0; i < prompt.questions.length; i += 1) {
+        const question = prompt.questions[i];
+        const root = nativeQuestionRoot();
+        if (!root) return false;
+        if (skipAll) {
+          const skip = await waitNativeQuestionButton(/跳过|skip/i);
+          if (!skip) return false;
+          skip.click();
+          await questionSleep(180);
+          continue;
+        }
+        const answer = answers[i] || { selected: [], custom: '' };
+        const selected = Array.isArray(answer.selected) ? answer.selected : [];
+        for (const label of selected) {
+          const want = cleanQuestionLabel(label);
+          const option = Array.from(root.querySelectorAll('button[role="radio"],button[role="checkbox"]'))
+            .find((button) => cleanQuestionLabel(button.getAttribute('aria-label') || button.textContent) === want);
+          if (!option) return false;
+          option.click();
+          await questionSleep(35);
+        }
+        const custom = String(answer.custom || '').trim();
+        if (custom) {
+          const area = root.querySelector('textarea');
+          if (!area) return false;
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+          if (setter && setter.set) setter.set.call(area, custom); else area.value = custom;
+          area.dispatchEvent(new Event('input', { bubbles: true }));
+          area.dispatchEvent(new Event('change', { bubbles: true }));
+          await questionSleep(50);
+        }
+        const last = i === prompt.questions.length - 1;
+        const next = await waitNativeQuestionButton(last
+          ? /^(提交|submit|发送|回答|finish|done)$/i
+          : /^(下一题|next|继续)$/i);
+        if (!next) {
+          const fallback = await waitNativeQuestionButton(last ? /提交|submit|发送/i : /下一题|next|继续/i);
+          if (!fallback) return false;
+          fallback.click();
+        } else {
+          next.click();
+        }
+        await questionSleep(180);
+      }
+      return true;
+    } catch { return false; }
+  }
+
   /** In-immersive approval card: the native composer is behind the veil. */
   function ApprovalPrompt({ request, onAnswer }) {    const [busy, setBusy] = React.useState(false);
     const [failed, setFailed] = React.useState(false);
@@ -267,6 +373,105 @@ const HalofluxPlugin = (() => {
       React.createElement('div', { className: 'actions' },
         React.createElement('button', { type: 'button', className: 'reject', disabled: busy, onClick: () => answer('rejected') }, '拒绝'),
         React.createElement('button', { type: 'button', className: 'allow', disabled: busy, onClick: () => answer('allowed-once') }, '允许一次')
+      )
+    );
+  }
+
+  /**
+   * In-immersive ask_user_question card. It mirrors the request but submits by
+   * driving the native composer takeover behind the veil, so the live
+   * waterfall — not a second answer path — settles the tool call.
+   */
+  function QuestionPrompt({ prompt, onAnswer }) {
+    const initial = () => prompt.questions.map((question) => {
+      const first = question.options && question.options[0] ? question.options[0].label : '';
+      const recommended = /\((?:recommended|推荐)\)\s*$/i.test(first) ? [first] : [];
+      return { selected: recommended, custom: '' };
+    });
+    const [answers, setAnswers] = React.useState(initial);
+    const [busy, setBusy] = React.useState(false);
+    const [failed, setFailed] = React.useState('');
+    const update = (index, patch) => {
+      setAnswers((previous) => previous.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, ...patch } : item
+      )));
+    };
+    const toggle = (index, question, label) => {
+      const current = answers[index] || { selected: [], custom: '' };
+      const selected = question.multiSelect
+        ? (current.selected.includes(label)
+          ? current.selected.filter((value) => value !== label)
+          : current.selected.concat(label))
+        : (current.selected.includes(label) ? [] : [label]);
+      update(index, { selected, custom: '' });
+    };
+    const finish = async (skipAll) => {
+      if (busy) return;
+      if (!skipAll) {
+        const missing = prompt.questions.findIndex((_, index) => {
+          const item = answers[index] || { selected: [], custom: '' };
+          return item.selected.length === 0 && !String(item.custom || '').trim();
+        });
+        if (missing >= 0) {
+          setFailed('请为每个问题选择一个选项，或在下方补充你的想法。');
+          return;
+        }
+      }
+      setBusy(true);
+      setFailed('');
+      const ok = await onAnswer(prompt, answers, skipAll);
+      if (!ok) {
+        setBusy(false);
+        setFailed('无法连接原生提问面板，请按 Esc 退出沉浸后处理。');
+      }
+    };
+    return React.createElement('div', {
+      className: 'hfx-approval hfx-question', role: 'dialog', 'aria-modal': 'true',
+    },
+      React.createElement('div', { className: 'kicker' },
+        prompt.questions.length > 1 ? 'QUESTIONS · ' + String(prompt.questions.length) : 'QUESTION REQUEST'),
+      React.createElement('div', { className: 'q-list' },
+        prompt.questions.map((question, index) => React.createElement('section', {
+          className: 'q-block', key: question.id + ':' + String(index),
+        },
+          question.header ? React.createElement('div', { className: 'q-header' }, question.header) : null,
+          React.createElement('h3', null, question.question || '请选择'),
+          question.detail ? React.createElement('div', { className: 'q-detail' }, question.detail) : null,
+          question.options.length ? React.createElement('div', { className: 'q-options' },
+            question.options.map((option) => {
+              const active = (answers[index] || { selected: [] }).selected.includes(option.label);
+              return React.createElement('button', {
+                type: 'button',
+                key: option.label,
+                className: 'q-option' + (active ? ' on' : ''),
+                title: option.description || undefined,
+                disabled: busy,
+                onClick: () => toggle(index, question, option.label),
+              }, option.label);
+            })
+          ) : null,
+          React.createElement('textarea', {
+            className: 'q-custom',
+            rows: 2,
+            placeholder: '补充你的想法…',
+            value: (answers[index] || { custom: '' }).custom,
+            disabled: busy,
+            onChange: (event) => update(index, {
+              custom: event.target.value,
+              selected: question.multiSelect === true ? (answers[index] || { selected: [] }).selected : [],
+              skipped: false,
+            }),
+          })
+        ))
+      ),
+      failed ? React.createElement('div', { className: 'err' }, failed) : null,
+      React.createElement('div', { className: 'actions' },
+        React.createElement('button', {
+          type: 'button', className: 'reject', disabled: busy, onClick: () => finish(true),
+        }, '拒绝'),
+        React.createElement('button', {
+          type: 'button', className: 'allow', disabled: busy, onClick: () => finish(false),
+        }, busy ? '提交中…' : '提交')
       )
     );
   }
@@ -455,7 +660,7 @@ const HalofluxPlugin = (() => {
         if (!stopped && failures >= 2) setPlatform(null);
       };
       read();
-      const timer = setInterval(read, 3000);
+      const timer = setInterval(read, 30000);
       return () => { stopped = true; clearInterval(timer); };
     }, []);
 
@@ -688,9 +893,15 @@ const HalofluxPlugin = (() => {
         h('span', { className: 'glyph' }, '◉'),
         h('span', { className: 'txt' }, 'ENTER')
       ) : null,
-      immersive && live && live.approvalRequest
-        ? h(ApprovalPrompt, { request: live.approvalRequest, onAnswer: answerNativeApproval })
-        : null,
+      immersive && live && live.questionPending && live.questionPrompt
+        ? h(QuestionPrompt, {
+          key: 'question:' + String(live.questionPrompt.callId || ''),
+          prompt: live.questionPrompt,
+          onAnswer: answerNativeQuestion,
+        })
+        : immersive && live && live.approvalRequest
+          ? h(ApprovalPrompt, { request: live.approvalRequest, onAnswer: answerNativeApproval })
+          : null,
       HalofluxHud && live ? h(HalofluxHud.Console, { ...hudProps, liveTick }) : null,
     );
   }

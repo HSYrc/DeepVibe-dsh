@@ -66,7 +66,7 @@ vm.createContext(sandbox);
 vm.runInContext(src, sandbox, { filename: 'client.js' });
 
 ok(loaded.length === 1, 'client.js registers exactly one module (' + loaded.length + ')');
-ok(loaded[0] && loaded[0].id === 'dsh-haloflux', 'module id = dsh-haloflux');
+ok(loaded[0] && loaded[0].id === 'deepvibe-dsh', 'module id = deepvibe-dsh');
 
 const plugin = loaded[0].factory((name) => {
   if (name === 'react') return ReactStub;

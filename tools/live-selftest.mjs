@@ -219,6 +219,24 @@ check('last tool event time is the result time', live.lastToolEventAt === result
   `last=${live.lastToolEventAt}`);
 check('tool records the current session id', !!done && done.sessionId === 'S1', `session=${done ? done.sessionId : 'n/a'}`);
 
+const questionAt = Date.now();
+s1.append(durable('tool/call', {
+  turn: 1, step: 1, callId: 'call_q', name: 'ask_user_question',
+  arguments: JSON.stringify({ questions: [{
+    id: 'pick', header: 'Choose', question: 'Which path?', multiSelect: false,
+    options: [{ label: 'A (Recommended)' }, { label: 'B' }],
+  }] }),
+}, questionAt));
+check('ask_user_question exposes a pending prompt', live.questionPending === true
+  && live.questionPrompt && live.questionPrompt.callId === 'call_q'
+  && live.questionPrompt.questions[0].options.length === 2,
+  JSON.stringify(live.questionPrompt));
+s1.append(durable('tool/result', {
+  turn: 1, step: 1,
+  message: { role: 'tool', toolCallId: 'call_q', source: { callId: 'call_q', name: 'ask_user_question' }, content: [{ type: 'text', text: '{}' }] },
+}));
+check('question result clears the pending prompt', live.questionPending === false && live.questionPrompt === null);
+
 console.log('--- phase 4: settlement + usage (double-count guard) ---');
 const settlement = durable('assistant/message', {
   turn: 1, step: 1,

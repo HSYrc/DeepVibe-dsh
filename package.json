@@ -1,7 +1,7 @@
 {
   "name": "deepvibe-dsh",
-  "version": "0.5.12",
-  "description": "DeepVibe-dsh — a live light-ring background for the DeepSeek Harness Web GUI, driven by the current session: ring rotation, token capture and beams follow the model call, with an immersive dock, approval card, real Platform balance/today spend, and a Settings page.",
+  "version": "0.5.18",
+  "description": "DeepVibe-dsh - live light-ring DSH plugin with immersive dock, approval/question cards, real Platform billing, and session topic.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "keywords": [
