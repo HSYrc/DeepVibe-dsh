@@ -29,7 +29,7 @@ DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深�
 
 ## 它是怎么工作的
 
-![DeepVibe-dsh 运行架构](docs/assets/architecture.jpg)
+![DeepVibe-dsh 运行架构](docs/assets/architecture-v2.jpg)
 
 - **Client**：消费 DSH 会话事件，负责光环、沉浸看板、审批/提问卡与会话主题。
 - **Host**：用 DSH 账户的 Host-only 凭据读取平台余额与今日 usage，只把聚合 JSON 交给 Client。
