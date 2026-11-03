@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "title": {
+    "en": "DeepVibe-dsh Market"
+  },
+  "description": {
+    "en": "Deep-ambience coding plugin for DeepSeek Harness"
+  },
+  "plugins": [
+    {
+      "name": "deepvibe-dsh",
+      "title": {
+        "en": "DeepVibe-dsh"
+      },
+      "description": {
+        "en": "Live light-ring DSH plugin with immersive dock, approval/question cards, Platform billing and session topic."
+      },
+      "icon": "../icon.svg",
+      "author": "HSYrc",
+      "homepage": "https://github.com/HSYrc/DeepVibe-dsh",
+      "repository": {
+        "url": "https://github.com/HSYrc/DeepVibe-dsh"
+      },
+      "versions": [
+        {
+          "version": "0.5.18",
+          "publishTimestamp": 1793674079,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/HSYrc/DeepVibe-dsh",
+            "commit": "e04b58592e552c73392bd73d5fe68e86bd6c9321"
+          },
+          "engines": {
+            "dsh": ">=0.2.1-rc.5"
+          }
+        }
+      ]
+    }
+  ]
+}

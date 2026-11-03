@@ -76,6 +76,32 @@ tgz 内包含 Host、Client、`src/`、`tools/`、构建脚本与文档，可独
 - 包名 `deepvibe-dsh`，bundle 行 id `haloflux`，同时注册 `shell.overlay` 与 `settings.section`。
 - 卸载：`plugin_manager remove_bundle target=deepvibe-dsh`。
 
+### 在 DSH Discover / 插件市场找到
+
+DSH 官方**不内置任何索引源**，Discover 是一个可添加索引 URL 的自定义插件市场。  
+本仓库自带一个可直接添加的市场索引：
+
+```text
+https://raw.githubusercontent.com/HSYrc/DeepVibe-dsh/main/market/index.json
+```
+
+在 DSH 中：
+
+1. 打开 **插件 → 实验性插件 → 更多**，启用 **自定义插件市场**
+2. 进入 **发现 → 添加索引源**
+3. 填入上面的 URL
+4. 搜索 `DeepVibe-dsh`，确认来源后安装
+
+也可以直接从 GitHub 安装：
+
+```text
+dsh plugin --profile web add https://github.com/HSYrc/DeepVibe-dsh.git
+```
+
+社区市场 DSH Plugin Hub 的收录方式是：GitHub 公开仓库 + `dsh-plugin` topic + README 安装命令，然后到 [dsh-plugin.org 提交页](https://dsh-plugin.org/zh/submit) 提交。它不是 DSH 官方内置市场，但可被该社区市场的用户搜到。
+
+如果要进入 **DeepSeek 官方内置目录**，目前没有公开的自助上架接口，需要由 DeepSeek Harness 官方收录；可以到 [DeepSeek Harness 仓库](https://github.com/deepseek-ai/deepseek-harness) 提 issue/反馈询问收录流程。
+
 ## 三、数据抓取档位
 
 设置页顶部的三档开关（参数 `dataMode`）：
