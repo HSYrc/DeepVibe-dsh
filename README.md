@@ -58,6 +58,16 @@ DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深�
 
 需要已安装 DeepSeek Harness（桌面版或 `dsh web`）。
 
+从 npm 安装：
+
+```text
+dsh plugin --profile web add deepvibe-dsh
+```
+
+npm 包地址：https://www.npmjs.com/package/deepvibe-dsh
+
+也可以从本地目录安装：
+
 ```text
 plugin_manager install_bundle  target=<本包目录的绝对路径>
 ```
@@ -96,6 +106,12 @@ https://raw.githubusercontent.com/HSYrc/DeepVibe-dsh/main/market/index.json
 
 ```text
 dsh plugin --profile web add https://github.com/HSYrc/DeepVibe-dsh.git
+```
+
+npm 安装：
+
+```text
+dsh plugin --profile web add deepvibe-dsh
 ```
 
 社区市场 DSH Plugin Hub 的收录方式是：GitHub 公开仓库 + `dsh-plugin` topic + README 安装命令，然后到 [dsh-plugin.org 提交页](https://dsh-plugin.org/zh/submit) 提交。它不是 DSH 官方内置市场，但可被该社区市场的用户搜到。

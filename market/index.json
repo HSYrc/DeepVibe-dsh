@@ -24,11 +24,10 @@
       "versions": [
         {
           "version": "0.5.18",
-          "publishTimestamp": 1793674079,
+          "publishTimestamp": 1793675544,
           "source": {
-            "type": "git",
-            "url": "https://github.com/HSYrc/DeepVibe-dsh",
-            "commit": "e04b58592e552c73392bd73d5fe68e86bd6c9321"
+            "type": "npm",
+            "registry": "https://registry.npmjs.org"
           },
           "engines": {
             "dsh": ">=0.2.1-rc.5"
