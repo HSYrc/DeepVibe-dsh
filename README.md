@@ -1,90 +1,108 @@
-<a id="english"></a>
+# DeepVibe-dsh
 
-**English** · [中文](#deepvibe-dsh--深度氛围感编程插件)
+**Deep-ambience coding plugin for DeepSeek Harness**  
+**DeepSeek Harness 的深度氛围感编程插件**
 
-> A live light-ring overlay for **DeepSeek Harness** that reacts to your coding session.
+[GitHub](https://github.com/HSYrc/DeepVibe-dsh) · [npm](https://www.npmjs.com/package/deepvibe-dsh) · [Issues](https://github.com/HSYrc/DeepVibe-dsh/issues)
 
 ![DeepVibe-dsh immersive dashboard](docs/assets/immersive-dashboard-2.jpg)
 
-- **The ring wakes up when the model starts working.** Tokens flow as light, and every finished tool call lights a cell in a 10×10 heatmap.
-- **Immersive dock with real data only:** tokens, tok/s, cache hit, context fill, tool latency, balance and today's spend, all read from DSH's live event stream. When there's no data it stays blank: no fake numbers.
-- **Decide without leaving:** approval and question cards appear on the right, and clicking one drives DSH's native panel.
-- **Safe billing:** platform billing is read on the host side, so your token never reaches the renderer.
-- **82 parameters, 3 presets.** Tune it to fit your setup.
+*Actual runtime · 实机运行：immersion ring, session topic, and four live dock cards.*
 
-**Install (npm):**
+---
+
+## Overview · 概览
+
+**English**  
+DeepVibe-dsh is not a wallpaper that gets in the way. It is a session-aware ambience layer for DeepSeek Harness: when the model starts working the ring wakes up, tokens flow as light, finished tools light up a 10×10 heatmap, and the whole frame settles when the task ends.
+
+**中文**  
+DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深度氛围感编程插件**。模型开工，光环醒来；词元流出，光点聚散；工具执行，热力图逐格亮起；任务收尾，整个画面慢慢安静。
+
+---
+
+## Why it feels different · 为什么它不一样
+
+**English**
+- **It breathes, but does not shout.** Running, idle, approval and question states each have their own rhythm.
+- **Data is not decoration.** Every light, heatmap cell and cost can be traced back to a session event or the Platform bill.
+- **One plugin, not a pile of scripts.** Host and Client ship together; there is no Chrome, CDP, Playwright or local bridge to keep alive.
+
+**中文**
+- **会呼吸，但不吵。** 运行、空闲、审批、提问各有节奏；该亮的时候亮，该停的时候停。
+- **数据不是装饰。** 每一次亮起、每一格热力图、每一笔花费，都能在会话或平台账单里找到出处。
+- **一个插件，不是一堆脚本。** Host + Client 打包在同一个插件里，装好即用，不额外拉起浏览器或本地服务。
+
+---
+
+## Architecture · 架构
+
+![DeepVibe-dsh runtime architecture](docs/assets/architecture-v2.jpg)
+
+**English**
+- **Client** consumes DSH session events and owns the ring, immersive dock, approval/question cards and session topic.
+- **Host** uses the Host-only DSH account session to read Platform balance and today's usage; it sends only aggregate JSON to the Client.
+- **No external browser.** Platform tokens never reach the renderer.
+
+**中文**
+- **Client**：消费 DSH 会话事件，负责光环、沉浸看板、审批/提问卡与会话主题。
+- **Host**：用 DSH 账户的 Host-only 凭据读取平台余额与今日 usage，只把聚合 JSON 交给 Client。
+- **没有外部浏览器。** 平台 token 不进入渲染器。
+
+---
+
+## Features · 功能
+
+**English**
+- Full-frame Canvas overlay mounted in `shell.overlay`: transparent, additive light, click-through.
+- Session-driven ring: tokens, tool calls, `turn/step`, tok/s and context all come from the live event stream.
+- Immersive dock with four real cards: model, context/cost, 10×10 tool heatmap, balance/today spend.
+- Approval card: reject or allow once without leaving immersion.
+- Question card: options, multi-select, free-form supplement, reject, submit.
+- Cache hit from DSH's `tokenUsage` projection, whole-session denominator, one decimal.
+- Session topic: `project · session title`, each capped at 12 characters.
+- 82 parameters, 6 groups, 3 presets. Everything is editable from **Settings → DeepVibe-dsh**.
+
+**中文**
+- 全帧 Canvas 背景，挂载在 `shell.overlay`：透明底、加色发光、点击穿透。
+- 会话驱动：词元、工具调用、`turn/step`、tok/s、上下文全部来自真实事件流。
+- 沉浸看板四块真实数据卡：模型、上下文/花费、10×10 工具热力图、余额/今日消费。
+- 审批卡：不用退出沉浸，直接「拒绝 / 允许一次」。
+- 提问卡：选项、多选、补充输入、拒绝、提交。
+- 缓存命中使用 DSH `tokenUsage` 投影，整个会话口径，固定一位小数。
+- 会话主题：`项目名 · 会话标题`，两部分各最多 12 个字。
+- 82 个参数、6 个分组、3 个预设，都可在 **设置 → DeepVibe-dsh** 中调整。
+
+---
+
+## Install · 安装
+
+**English**  
+DeepSeek Harness is required (desktop app or `dsh web`).
+
+From npm:
 
 ```text
 dsh plugin --profile web add deepvibe-dsh
 ```
 
-Or install from an extracted package directory:
+From an extracted package directory:
 
 ```text
 plugin_manager install_bundle target=<absolute path to this package>
 ```
 
-Then restart DSH and open **Settings → DeepVibe-dsh**.
+From the release tgz:
 
-License: PolyForm Noncommercial 1.0.0. Free for personal use, not for commercial use. If you like it, a ⭐ helps a lot!
+```text
+tar -xzf DeepVibe-dsh-0.5.18.tgz
+plugin_manager install_bundle target=<absolute path to the extracted package directory>
+```
 
----
+Restart DSH and open **Settings → DeepVibe-dsh**.
 
-# DeepVibe-dsh — 深度氛围感编程插件
-
-> 让 AI 写代码的时候，屏幕也有点“在场感”。
-
-DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深度氛围感编程插件**。它把 HALOFLUX 的 Canvas 光场接进 DeepSeek Harness：模型开工，光环醒来；词元流出，光点聚散；工具执行，热力图逐格亮起；任务收尾，整个画面慢慢安静。
-
-**沉浸模式**下，它会升起四块真实数据卡：模型状态、上下文与花费、10×10 工具执行热力图、余额与今日消费。模型要审批或提问时，决策卡直接出现在右侧，选项、补充输入、拒绝、提交都在原地完成。
-
-**它最在意的是“真”**：词元、工具耗时、上下文、缓存命中、平台账单，全部来自当前 DSH 会话与账户；没有数据就留白，不编造。没有 Chrome，没有外部桥接，安装后随 DSH 一起启动。
-
-### 为什么它有点不一样
-
-- **会呼吸，但不吵**：运行、空闲、审批、提问各有节奏；该亮的时候亮，该停的时候停。
-- **数据不是装饰**：每一次亮起、每一格热力图、每一笔花费，都能在会话或平台账单里找到出处。
-- **一个插件，不是一堆脚本**：Host + Client 打包在同一个插件里，装好即用，不额外拉起浏览器或本地服务。
-
-## 运行实拍
-
-上面这张就是实际运行画面：沉浸光环、右上角会话主题，以及底部四块实时看板同时工作。
-
-> 本包是自包含的：运行、构建、测试都只依赖包内文件与 DSH 自带的宿主接口，
-> 不依赖工作区里的其它目录。
-
----
-
-## 它是怎么工作的
-
-![DeepVibe-dsh 运行架构](docs/assets/architecture-v2.jpg)
-
-- **Client**：消费 DSH 会话事件，负责光环、沉浸看板、审批/提问卡与会话主题。
-- **Host**：用 DSH 账户的 Host-only 凭据读取平台余额与今日 usage，只把聚合 JSON 交给 Client。
-- **没有外部浏览器**：不需要 Chrome、CDP、Playwright 或本地 47821 桥；平台 token 不进入渲染器。
-
-## 一、功能
-
-| 能力 | 说明 |
-|---|---|
-| 全帧背景 | 挂载在 `shell.overlay`：透明底 + 加色发光，点击穿透，不遮挡聊天界面 |
-| 会话驱动 | 词元、工具调用、`turn/step`、tok/s、上下文占用全部来自真实会话事件流 |
-| 三档数据抓取 | 纯动画 / 混合 30% / 完全抓取，见下文 |
-| 设置页面 | **设置 → DeepVibe-dsh**：档位、预设、导入导出、全部 82 个参数 |
-| 沉浸看板 | 运行时升起四块真实数据卡（模型、上下文、实现热力图、余额/今日消费） |
-| 沉浸审批 | 右侧审批卡直接「拒绝 / 允许一次」，等待审批时运动静止、亮度保持 |
-| 沉浸提问 | 问题、选项、多选、补充输入、拒绝/提交；提交驱动原生 waterfall |
-| 缓存命中 | 使用 DSH `tokenUsage` 投影，整个会话口径，一位小数 |
-| 会话主题 | 沉浸右上角显示「项目名 · 会话主题」，白框发光 |
-| 平台账单 | Host 用 DSH 账户凭据读取 Platform 真实余额与今日实际消费；30 秒轮询，无 Chrome 依赖；平台不可用时 TODAY 显示 —，不用估算冒充 |
-| HUD | `H` 键：KPI 条、事件流、工具调度、运镜按钮（默认关闭） |
-| 三段状态机 | 运行态 / 静默态 / 无会话 各有目标强度，起势与收势独立时长、可调曲线 |
-| 切会话转一圈 | 圆盘平滑转满 360°，外圈光束按层视差跟随 |
-| 切换动效（5 个开关） | 外圈跟随 / 内容逐块揭示 / 亮度脉冲 / 色相扫过 / 镜头轻推，各自独立可关 |
-
-## 二、安装
-
-需要已安装 DeepSeek Harness（桌面版或 `dsh web`）。
+**中文**  
+需要先安装 DeepSeek Harness（桌面版或 `dsh web`）。
 
 从 npm 安装：
 
@@ -92,199 +110,309 @@ DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深�
 dsh plugin --profile web add deepvibe-dsh
 ```
 
-npm 包地址：https://www.npmjs.com/package/deepvibe-dsh
-
-也可以从本地目录安装：
+从解压后的包目录安装：
 
 ```text
-plugin_manager install_bundle  target=<本包目录的绝对路径>
+plugin_manager install_bundle target=<本包目录的绝对路径>
 ```
 
-也可以分发打好的 tgz。`install_bundle` 需要**解压后的包目录**：
+从 Release tgz 安装：
 
 ```text
 tar -xzf DeepVibe-dsh-0.5.18.tgz
-plugin_manager install_bundle  target=<解压出的 package 目录绝对路径>
+plugin_manager install_bundle target=<解压出的 package 目录绝对路径>
 ```
 
-tgz 内包含 Host、Client、`src/`、`tools/`、构建脚本与文档，可独立迁移。
+刷新页面，侧栏出现 **设置 → DeepVibe-dsh** 即成功。
 
-安装后刷新页面，侧栏底部 **设置 → DeepVibe-dsh** 出现即成功。
+---
 
-- 包名 `deepvibe-dsh`，bundle 行 id `haloflux`，同时注册 `shell.overlay` 与 `settings.section`。
-- 卸载：`plugin_manager remove_bundle target=deepvibe-dsh`。
+## Find it in DSH · 在 DSH 中找到
 
-### 在 DSH Discover / 插件市场找到
+**English**  
+DSH does not ship a built-in index source. **Discover** is a custom plugin market: users add an index URL, then search inside it.
 
-DSH 官方**不内置任何索引源**，Discover 是一个可添加索引 URL 的自定义插件市场。  
-本仓库自带一个可直接添加的市场索引：
+This repository provides an index:
 
 ```text
 https://raw.githubusercontent.com/HSYrc/DeepVibe-dsh/main/market/index.json
 ```
 
-在 DSH 中：
+1. Open **Plugins → Experimental plugins → More**, enable **Custom plugin market**.
+2. Open **Discover → Add index source**.
+3. Paste the URL above.
+4. Search `DeepVibe-dsh`, check the source, then install.
 
-1. 打开 **插件 → 实验性插件 → 更多**，启用 **自定义插件市场**
-2. 进入 **发现 → 添加索引源**
-3. 填入上面的 URL
-4. 搜索 `DeepVibe-dsh`，确认来源后安装
+The index now points to the npm package, so installs use `deepvibe-dsh@0.5.18`.
 
-也可以直接从 GitHub 安装：
+**中文**  
+DSH 官方**不内置任何索引源**，Discover 是一个可添加索引 URL 的自定义插件市场。
 
-```text
-dsh plugin --profile web add https://github.com/HSYrc/DeepVibe-dsh.git
-```
-
-npm 安装：
+本仓库提供一个可直接添加的索引：
 
 ```text
-dsh plugin --profile web add deepvibe-dsh
+https://raw.githubusercontent.com/HSYrc/DeepVibe-dsh/main/market/index.json
 ```
 
-社区市场 DSH Plugin Hub 的收录方式是：GitHub 公开仓库 + `dsh-plugin` topic + README 安装命令，然后到 [dsh-plugin.org 提交页](https://dsh-plugin.org/zh/submit) 提交。它不是 DSH 官方内置市场，但可被该社区市场的用户搜到。
+1. 打开 **插件 → 实验性插件 → 更多**，启用 **自定义插件市场**。
+2. 进入 **发现 → 添加索引源**。
+3. 粘贴上面的 URL。
+4. 搜索 `DeepVibe-dsh`，确认来源后安装。
 
-如果要进入 **DeepSeek 官方内置目录**，目前没有公开的自助上架接口，需要由 DeepSeek Harness 官方收录；可以到 [DeepSeek Harness 仓库](https://github.com/deepseek-ai/deepseek-harness) 提 issue/反馈询问收录流程。
+索引已指向 npm 包，安装的是 `deepvibe-dsh@0.5.18`。
 
-## 三、数据抓取档位
+> Community listing · 社区收录：仓库已添加 `dsh-plugin` topic，并提交到 [DSH Plugin Hub](https://dsh-plugin.org/)。Hub is community-run, not an official DeepSeek catalog.  
+> 社区市场由 dsh-plugin.org 维护，不是 DeepSeek 官方目录。DeepSeek 官方内置目录没有公开自助上架入口。
 
-设置页顶部的三档开关（参数 `dataMode`）：
+---
 
-| 档 | 名称 | 光环上的文字与数字 | 会话读取 |
-|---|---|---|---|
-| 0 | 纯动画 | 全部来自原作示例词表与随机数 | 不抓词元（`pullTokens` 跳过）；亮度仍随运行/静默变化 |
-| 1 | 混合 30%（默认） | 有词元时来自真实回答，数字与表头为合成 | 词元 + 工具名 + 运行状态 |
-| 2 | 完全抓取 | 只显示真实数据：词元、工具名、`STEP n` / `TURN n`、tok/s、上下文；没有就留空 | 全部 |
+## Usage · 使用
 
-档位只约束**画布上的文字与数字**；`H` 打开的 HUD 始终是真实会话监视器。
+**English**  
+Shortcuts work when focus is not inside an input:
 
-## 四、使用
+| Key | Action |
+|---|---|
+| `C` | Open/close the quick parameter console |
+| `H` | Toggle the HUD |
+| `I` | Enter/exit immersive mode |
+| `Esc` | Close the overlay / exit immersion |
 
-快捷键（焦点不在输入框内时）：
+When a run starts, the immersive dock rises automatically. `Esc` or `EXIT · ESC` leaves immersion without stopping the task; while it is still running, the bottom-right `ENTER` button brings it back.
 
-| 键 | 作用 |
+**中文**  
+焦点不在输入框内时，快捷键可用：
+
+| 按键 | 作用 |
 |---|---|
 | `C` | 打开/关闭快速调参浮层 |
 | `H` | 打开/关闭 HUD |
-| `Esc` | 关闭浮层 |
+| `I` | 进入/退出沉浸模式 |
+| `Esc` | 关闭浮层 / 退出沉浸 |
 
-设置页与浮层、画布共用同一份参数（`src/state.js`），任一处改动其余立刻跟随；
-「保存为默认」写入 `localStorage`，跨重启保留。
+模型开始运行后，沉浸看板自动升起。`Esc` 或 `EXIT · ESC` 只会退出沉浸，不会中断任务；任务仍在运行时，右下角 `ENTER` 可以重新进入。
 
-### 切换动效
+---
 
-切换会话时依次发生（都可单独关闭）：
+## Approval & questions · 审批与提问
 
-1. `revolveOnSwitch`：圆盘转满一圈（`revolveMs`）；
-2. `revolveOuter`：外围光束按层跟随，远端慢、近端快，转起来有纵深；
-3. `switchReveal`：转动过程中圆环面板逐块失效重建，旧会话的文字被新会话替换；
-4. `switchFlash`：亮度在转圈中点轻微上冲后回落；
-5. `switchHue`：可选的色相扫过（默认 0，不开就不换色）；
-6. `switchCam`：镜头在 1 → 0.972 → 1 之间轻推一次。
+**English**  
+In immersive mode, an approval request appears as a card on the right: **Reject** or **Allow once**. The card drives DSH's native approval panel, so there is only one decision path.
 
-2–6 由 `engine.switchFx()` 驱动，与是否转圈解耦：关掉转圈，其余效果仍然生效。
+Model questions use the same surface: options, optional multi-select, a free-form field, **Reject**, and **Submit**. Submitting drives the native question waterfall, not a second answer path.
 
-运行中的会话切到**空闲**会话时，收光会与转圈重叠（约 260ms 后开始衰减），不会亮着转完再暗；
-若觉得转圈中点的亮度脉冲抢戏，把 `switchFlash` 调低或设 0。
+While either card is waiting, motion and particle generation ease to a stop; brightness stays at the running level.
 
-## 五、参数
+**中文**  
+沉浸模式下，审批请求会显示在右侧卡片：**拒绝** 或 **允许一次**。卡片直接驱动 DSH 原生审批面板，只有一条决策路径。
 
-共 **82 项**，分 6 组：原作 **56 项**（`全局` 5 / `圆环` 7 / `圈内` 18 / `环外` 17 / `空间层次` 9），
-本项目新增 **23 项**（`插件` 组）：
+模型提问使用同一套界面：选项、可选多选、补充输入、**拒绝**、**提交**。提交直接驱动原生提问 waterfall，不另开回答路径。
 
-| 参数 | 默认 | 作用 |
-|---|---|---|
-| `opacity` | 0.45 | 整层不透明度 |
-| `blend` | 0 | 混合模式 0=screen 1=lighten 2=normal |
-| `activityGain` | 1 | 活跃度对生成速率的增益 |
-| `centerX` / `centerY` | -0.15 / 0 | 构图中心偏移 |
-| `scale` | 0.6 | 整体缩放 |
-| `hudOn` | 0 | HUD 开关 |
-| `feedOn` | 1 | 事件流开关 |
-| `dataMode` | 1 | 数据抓取档位 0/1/2 |
-| `backdrop` | 0 | 深色底比例；0 = 纯透明发光 |
-| `runLevel` | 1 | 运行态强度 |
-| `idleMotion` | 0.18 | 静默态强度 |
-| `voidLevel` | 0 | 无会话强度；0 = 整帧透明 |
-| `attackMs` | 800 | 起势时长 |
-| `releaseMs` | 2600 | 收势时长 |
-| `easeCurve` | 1 | 过渡曲线 0 线性 / 1 平滑 / 2 双 S |
-| `revolveOnSwitch` | 1 | 切换会话是否转满一圈 |
-| `revolveMs` | 1500 | 整圈用时 |
-| `camera`（原作） | 0 | 自动运镜开关；0 = 固定机位 |
-| `revolveOuter` | 1 | 切换时外圈光束跟随转圈（远层 0.35 / 主层 1.0 / 近层 1.15 的视差） |
-| `switchReveal` | 1 | 切换时圆环面板逐块重建，内容随转动换成新会话 |
-| `switchFlash` | 0.6 | 切换窗口内的亮度脉冲强度；0 = 关 |
-| `switchHue` | 0 | 切换窗口内的色相扫过强度；0 = 关（默认不换色） |
-| `switchCam` | 1 | 切换时镜头轻微推拉（约 2.8% 缩放，不改相机状态） |
+等待审批或回答期间，动画运动和粒子生成会逐渐停止，亮度保持在运行态。
 
-## 六、数据来源（只读）
+---
 
-全部来自 Client 已有的会话服务，不新增 Host 事件、不写会话日志：
+## Data modes · 数据档位
+
+**English**
+
+| Mode | Name | Ring text and numbers | Session reading |
+|---|---|---|---|
+| 0 | Animation only | sample words / synthetic numbers | tokens skipped; brightness still follows running/idle |
+| 1 | Mixed 30% (default) | real tokens when available; synthetic headers | tokens + tool names + running state |
+| 2 | Full capture | only real tokens, tools, `STEP` / `TURN`, tok/s, context; blank when unknown | full |
+
+`dataMode` only affects text and numbers **on the canvas**. The `H` HUD is always a real session monitor.
+
+**中文**
+
+| 档 | 名称 | 光环上的文字与数字 | 会话读取 |
+|---|---|---|---|
+| 0 | 纯动画 | 原作示例词表 / 合成数字 | 不抓词元；亮度仍随运行/静默变化 |
+| 1 | 混合 30%（默认） | 有词元时用真实回答，表头仍为合成 | 词元 + 工具名 + 运行状态 |
+| 2 | 完全抓取 | 只显示真实词元、工具、`STEP` / `TURN`、tok/s、上下文；没有就留空 | 全部 |
+
+`dataMode` 只约束**画布上的文字与数字**；`H` 打开的 HUD 始终是真实会话监视器。
+
+---
+
+## Readings · 关键读数
+
+**English**  
+The dock separates what each number means:
+
+- **OUT**: output tokens from the current stream.
+- **CACHE HIT**: `cacheRead / (uncachedInput + cacheRead + cacheWrite)` over the whole session, one decimal; the top header, card and chart use the same value.
+- **INST TOK/S**: tokens arriving in the last 50 ms slice.
+- **CONTEXT**: used / left, window size, fill %, compactions and prunes.
+- **BALANCE / TODAY**: Platform wallet and actual billed spend for the local day.
+
+**中文**  
+看板会区分每个数字的含义：
+
+- **OUT**：当前流里的输出词元。
+- **CACHE HIT**：整个会话的 `cacheRead / (uncachedInput + cacheRead + cacheWrite)`，一位小数；顶部 CACHE、卡片和折线图共用同一个值。
+- **INST TOK/S**：最近 50 ms 切片内到达的词元速率。
+- **CONTEXT**：已用 / 剩余、窗口大小、占用百分比、压缩与 prune 次数。
+- **BALANCE / TODAY**：平台钱包余额与本地今天实际账单。
+
+---
+
+## Platform billing · 平台账单
+
+**English**  
+`BALANCE` and `TODAY` are read by the **Host** through the DSH account's Host-only Platform session. The client receives only aggregates.
+
+- Polling is **30 seconds**; Platform data itself may lag about **5 minutes**.
+- `BALANCE` prefers the DSH account's `getBalance`.
+- If Platform usage is unavailable (for example a 202/rate limit), `TODAY` shows `—`. It never falls back to a made-up estimate.
+- A DSH account login is required. API-key-only mode has no wallet balance.
+
+**中文**  
+`BALANCE` / `TODAY` 由 **Host** 通过 DSH 账户的 Host-only Platform session 读取，客户端只拿到聚合值。
+
+- 轮询间隔 **30 秒**；平台数据本身可能有约 **5 分钟**延迟。
+- `BALANCE` 优先使用 DSH 账户的 `getBalance`。
+- 平台 usage 不可用（例如 202/限流）时，`TODAY` 显示 `—`，不会回退到编造的估算。
+- 需要 DSH 账户登录；纯 API Key 模式没有钱包余额。
+
+---
+
+## Data provenance · 数据来源
+
+**English**  
+Everything is read-only and derived from the current session:
 
 - `ctx.sessions.binding(sessionId)` → `eventSource`
-  - `transient` 条目 = 流式词元（`assistant/live-chunk` 的 `text-delta`）
-  - 持久事件 = `turn/step`、`user/message`、`assistant/message`（含 `usage`）、`tool/call`、`tool/result`
-- `useSessions` 找当前打开的会话，`useSessionStatus` 给「运行中/空闲」
-- tok/s、上下文占用、工具状态由 `src/live.js` 派生
-- Host 路由 `GET /haloflux/platform-summary` 使用 `deepseekAccount.getPlatformSession()` 的 Host-only 凭据读取 Platform 余额和今日实际消费；token 不下发到 Client
+- transient `assistant/live-chunk` → streaming tokens
+- durable `turn/step`, `user/message`, `assistant/message`, `tool/call`, `tool/result`
+- `useSessions` / `useSessionStatus` → current session and running state
+- DSH `tokenUsage` projection → whole-session cache hit
+- Host route `GET /haloflux/platform-summary` → Platform aggregates
 
-任何宿主调用都包在 `try/catch` 里；绑定消失、切会话、销毁都会释放订阅与定时器。
+No session log is written; bindings, timers and subscriptions are released on switch/dispose.
 
-## 七、源码结构与构建
+**中文**  
+所有数据都是只读的，来自当前会话：
+
+- `ctx.sessions.binding(sessionId)` → `eventSource`
+- transient `assistant/live-chunk` → 流式词元
+- durable `turn/step`、`user/message`、`assistant/message`、`tool/call`、`tool/result`
+- `useSessions` / `useSessionStatus` → 当前会话与运行状态
+- DSH `tokenUsage` 投影 → 整个会话缓存命中率
+- Host 路由 `GET /haloflux/platform-summary` → 平台聚合数据
+
+不写会话日志；切换会话或销毁时会释放绑定、定时器和订阅。
+
+---
+
+## Settings · 设置
+
+**English**  
+Open **Settings → DeepVibe-dsh**. There are **82 parameters** in **6 groups**: original 56 (`Global` 5 / `Ring` 7 / `Inner` 18 / `Outer` 17 / `Depth` 9) plus 26 plugin parameters.
+
+Useful defaults:
 
 ```text
-deepvibe-dsh/
-├─ package.json          # bundle 清单 + dsh.client
-├─ cordis.patch.yml      # 插入 haloflux 行
-├─ index.js              # Host 半边：平台余额/今日消费的只读同源路由
-├─ client.js             # ★ 构建产物（浏览器加载的唯一文件，勿手改）
-├─ build.mjs             # 拼接 src/*.js → client.js
-├─ src/
-│  ├─ engine.js          # Canvas 引擎（渲染、状态机、数据档位）
-│  ├─ state.js           # 参数 store（三个 React 根共用）
-│  ├─ live.js            # 会话实时数据适配
-│  ├─ hud.js             # HUD + 参数控件
-│  ├─ settings.js        # 设置 → DeepVibe-dsh 页面
-│  └─ mount.js           # 槽注册、组件装配、快捷键
-├─ locale/{en,zh}.json   # 插件管理器展示文案
-├─ icon.svg              # 图标
-├─ tools/                # 无头自测脚本
-├─ LICENSE               # PolyForm Noncommercial 1.0.0
-└─ NOTICE                # 署名与再分发要求
+opacity       0.55   idle canvas opacity
+runOpacity    1.00   immersive running opacity
+readOpacity   0.22   running but outside immersion
+runLevel      1.60   running intensity
+idleMotion    0.18   idle motion
+dataMode      1      mixed
+attackMs      800    attack
+releaseMs     2600   release
 ```
 
-构建：
+Three presets are included; **Save as default** writes to `localStorage`, so settings survive restarts.
+
+**中文**  
+打开 **设置 → DeepVibe-dsh**。共 **82 个参数**、**6 个分组**：原作 56 项（`全局` 5 / `圆环` 7 / `圈内` 18 / `环外` 17 / `空间层次` 9），加上 26 个插件参数。
+
+常用默认值：
+
+```text
+opacity       0.55   空闲不透明度
+runOpacity    1.00   沉浸运行不透明度
+readOpacity   0.22   运行但退出沉浸时
+runLevel      1.60   运行强度
+idleMotion    0.18   静默态运动
+dataMode      1      混合
+attackMs      800    起势
+releaseMs     2600   收势
+```
+
+内置 3 个预设；**保存为默认**写入 `localStorage`，跨重启保留。
+
+---
+
+## Build & test · 构建与测试
+
+**English**  
+The source is split into plain fragments and assembled into one browser artifact:
 
 ```bash
-node build.mjs && node --check client.js
+node build.mjs
+node --check client.js
 ```
 
-改完 `src/` 后需要重新 `install_bundle`（或重启 Host）并刷新页面。
-
-## 八、测试
-
-四个脚本都不需要浏览器，也不需要包外文件：
+Headless tests (no browser, no files outside the package):
 
 ```bash
-node tools/engine-smoke.cjs     # 无头假 DOM + 记录型 2D context（含三档数据断言）
-node tools/live-selftest.mjs    # 假 binding/eventSource：词元队列、tok/s、订阅生命周期
-node tools/client-smoke.cjs     # 假 module loader：装配、双槽注册、参数 store
-node tools/session-switch.cjs   # 切会话回归：运行态不被清、内容换到新会话、旧订阅释放
+node tools/engine-smoke.cjs
+node tools/live-selftest.mjs
+node tools/client-smoke.cjs
+node tools/dock-smoke.cjs
+node tools/session-switch.cjs
 ```
 
-`tools/_engine-probe.mjs` 是参数表的静态检查（项数、分组、重复键、预设）。
+After changing `src/`, rebuild and reinstall (or restart Host) before refreshing the page.
 
-## 九、兼容性
+**中文**  
+源码按片段组织，最终拼成一个浏览器产物：
 
-- 实测于 DeepSeek Harness **0.2.1-rc.2**（Windows 桌面版）。
-- 依赖宿主内部约定：`shell.overlay` / `settings.section` 槽位、槽位标准 props
-  `useSessions` / `useSessionStatus`、`sessions.binding()` 的 `eventSource`。
-  这些接口跨大版本可能变化；升级 DSH 后若出现白屏，先在这里排查。
+```bash
+node build.mjs
+node --check client.js
+```
 
-## 十、许可与致谢
+无头测试（不需要浏览器，也不依赖包外文件）：
 
-- 原作 **HALOFLUX**：Copyright (c) 2026 Ryder191（RYDER CODE / Ms MAIKEBAIs CAT），
-  <https://github.com/Ryder191/haloflux>，PolyForm Noncommercial License 1.0.0。
-- 本移植：同样**仅限非商业使用**，可在保留 `LICENSE` 与 `NOTICE` 的前提下自由分发与修改。
-- 再分发、二次修改请保留 `NOTICE` 中的 Required Notice 行。
+```bash
+node tools/engine-smoke.cjs
+node tools/live-selftest.mjs
+node tools/client-smoke.cjs
+node tools/dock-smoke.cjs
+node tools/session-switch.cjs
+```
+
+改完 `src/` 后需要重新构建并重装（或重启 Host），再刷新页面。
+
+---
+
+## Compatibility · 兼容性
+
+**English**  
+Tested on DeepSeek Harness **0.2.1-rc.5** (Windows desktop). It relies on the host contracts `shell.overlay` / `settings.section`, `useSessions` / `useSessionStatus`, and `sessions.binding()` → `eventSource`. A major DSH upgrade may change these; if the overlay disappears after an upgrade, check those contracts first.
+
+**中文**  
+实测于 DeepSeek Harness **0.2.1-rc.5**（Windows 桌面版）。依赖宿主约定：`shell.overlay` / `settings.section` 槽位、`useSessions` / `useSessionStatus`、`sessions.binding()` 的 `eventSource`。DSH 大版本升级后若背景消失，先排查这些接口。
+
+---
+
+## License & credits · 许可与致谢
+
+**English**  
+This port is released under **PolyForm Noncommercial License 1.0.0**: free for personal, noncommercial use; commercial use is not permitted. Keep `LICENSE` and `NOTICE` when redistributing or modifying.
+
+Original **HALOFLUX**: Copyright (c) 2026 Ryder191 (RYDER CODE / Ms MAIKEBAIs CAT), <https://github.com/Ryder191/haloflux>, PolyForm Noncommercial License 1.0.0.
+
+**中文**  
+本项目使用 **PolyForm Noncommercial License 1.0.0**：仅限个人非商业使用，禁止商业使用。再分发或修改时请保留 `LICENSE` 与 `NOTICE`。
+
+原作 **HALOFLUX**：Copyright (c) 2026 Ryder191（RYDER CODE / Ms MAIKEBAIs CAT），<https://github.com/Ryder191/haloflux>，PolyForm Noncommercial License 1.0.0。
+
+---
+
+If DeepVibe-dsh helps your workflow, a ⭐ on GitHub is appreciated.  
+如果它让你的工作流更舒服，欢迎在 GitHub 点一个 ⭐。
