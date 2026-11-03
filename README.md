@@ -2,7 +2,7 @@
 
 > 让 AI 写代码的时候，屏幕也有点“在场感”。
 
-![DeepVibe-dsh 实机运行](docs/assets/immersive-dashboard.jpg)
+![DeepVibe-dsh 实机运行](docs/assets/immersive-dashboard-2.jpg)
 
 *实机截图：模型运行中的沉浸看板。顶部是项目名与会话主题，底部四块看板展示推理事件、Token/Cache、10×10 工具热力图、上下文与 Platform 余额/今日消费。*
 
