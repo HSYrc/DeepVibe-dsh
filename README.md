@@ -1,10 +1,38 @@
+<a id="english"></a>
+
+**English** · [中文](#deepvibe-dsh--深度氛围感编程插件)
+
+> A live light-ring overlay for **DeepSeek Harness** that reacts to your coding session.
+
+![DeepVibe-dsh immersive dashboard](docs/assets/immersive-dashboard-2.jpg)
+
+- **The ring wakes up when the model starts working.** Tokens flow as light, and every finished tool call lights a cell in a 10×10 heatmap.
+- **Immersive dock with real data only:** tokens, tok/s, cache hit, context fill, tool latency, balance and today's spend, all read from DSH's live event stream. When there's no data it stays blank: no fake numbers.
+- **Decide without leaving:** approval and question cards appear on the right, and clicking one drives DSH's native panel.
+- **Safe billing:** platform billing is read on the host side, so your token never reaches the renderer.
+- **82 parameters, 3 presets.** Tune it to fit your setup.
+
+**Install (npm):**
+
+```text
+dsh plugin --profile web add deepvibe-dsh
+```
+
+Or install from an extracted package directory:
+
+```text
+plugin_manager install_bundle target=<absolute path to this package>
+```
+
+Then restart DSH and open **Settings → DeepVibe-dsh**.
+
+License: PolyForm Noncommercial 1.0.0. Free for personal use, not for commercial use. If you like it, a ⭐ helps a lot!
+
+---
+
 # DeepVibe-dsh — 深度氛围感编程插件
 
 > 让 AI 写代码的时候，屏幕也有点“在场感”。
-
-![DeepVibe-dsh 实机运行](docs/assets/immersive-dashboard-2.jpg)
-
-*实机截图：模型运行中的沉浸看板。顶部是项目名与会话主题，底部四块看板展示推理事件、Token/Cache、10×10 工具热力图、上下文与 Platform 余额/今日消费。*
 
 DeepVibe-dsh 不是一个会抢戏的壁纸，而是一层会读会话的**深度氛围感编程插件**。它把 HALOFLUX 的 Canvas 光场接进 DeepSeek Harness：模型开工，光环醒来；词元流出，光点聚散；工具执行，热力图逐格亮起；任务收尾，整个画面慢慢安静。
 
